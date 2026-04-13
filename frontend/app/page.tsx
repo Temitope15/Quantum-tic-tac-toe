@@ -1,55 +1,81 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { QuantumGrid } from "../components/QuantumGrid";
+import { TutorialOverlay } from "../components/TutorialOverlay";
+import { Toast } from "../components/Toast";
 
-/**
- * Quantum Tic-Tac-Toe Web UI
- * A modern, dark-themed frontend for the Quantum Tic-Tac-Toe engine.
- */
+const API_URL = "http://127.0.0.1:8000";
+
+interface GameState {
+  board: (string | string[])[];
+  current_player: string;
+  status: string;
+  mode: string;
+  player_mark: string;
+}
+
+const TUTORIAL_STEPS = [
+  {
+    title: "Quantum Superposition",
+    desc: "In this reality, you don't just pick one square. You pick TWO. Your mark exists in both places at once—this is Superposition. Try clicking squares 0 and 1.",
+    highlightSquares: [0, 1],
+  },
+  {
+    title: "Quantum Entanglement",
+    desc: "Moves are linked. If one part of your move collapses, the other part must instantly react. This is 'Spooky Action at a Distance'. Click 1 and 2 to entangle them.",
+    highlightSquares: [1, 2],
+  },
+  {
+    title: "The Wavefunction Collapse",
+    desc: "Reality only takes shape when the universe is forced to choose. Creating a closed loop of moves triggers a 'Collapse'. Click 2 and 0 to close the circuit!",
+    highlightSquares: [2, 0],
+  },
+];
 
 export default function QuantumTicTacToe() {
-  const [board, setBoard] = useState<string[]>(Array(9).fill(""));
-  const [currentPlayer, setCurrentPlayer] = useState<string>("X");
-  const [status, setStatus] = useState<string>("ongoing");
+  const [gameState, setGameState] = useState<GameState | null>(null);
   const [selectedSquares, setSelectedSquares] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  
+  // Simulation/Tutorial State
+  const [isTutorial, setIsTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-
-  // Fetch initial state on mount
-  useEffect(() => {
-    fetchState();
-  }, []);
-
-  const fetchState = async () => {
+  const fetchState = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/state`);
+      if (!response.ok) throw new Error("Faulty connection to the quantum engine.");
       const data = await response.json();
-      setBoard(data.board);
-      setCurrentPlayer(data.current_player);
-      setStatus(data.status);
+      setGameState(data);
     } catch (error) {
-      console.error("Failed to fetch state:", error);
+      console.error("Fetch failed:", error);
+      showToast("Server unreachable. Please check if the backend is running.", "error");
     }
+  }, []);
+
+  useEffect(() => {
+    fetchState();
+  }, [fetchState]);
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
+    setToast({ message, type });
   };
 
   const handleSquareClick = (index: number) => {
-    if (status !== "ongoing" || loading) return;
-    
-    // Check if square is already collapsed (fixed 'X' or 'O')
-    // In our backend, collapsed squares are just "X" or "O"
-    if (board[index] === "X" || board[index] === "O") return;
+    if (loading || (gameState && typeof gameState.board[index] === "string")) return;
 
-    // Toggle selection
     if (selectedSquares.includes(index)) {
-      setSelectedSquares(selectedSquares.filter((i) => i !== index));
-    } else if (selectedSquares.length < 2) {
-      const newSelection = [...selectedSquares, index];
-      setSelectedSquares(newSelection);
+      setSelectedSquares(prev => prev.filter(s => s !== index));
+      return;
+    }
 
-      // Automatically submit if 2 squares are selected
-      if (newSelection.length === 2) {
-        submitMove(newSelection[0], newSelection[1]);
+    if (selectedSquares.length < 2) {
+      const newSelected = [...selectedSquares, index];
+      setSelectedSquares(newSelected);
+      if (newSelected.length === 2) {
+        submitMove(newSelected[0], newSelected[1]);
       }
     }
   };
@@ -62,98 +88,145 @@ export default function QuantumTicTacToe() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ square_1: s1, square_2: s2 }),
       });
+      
       const data = await response.json();
-      setBoard(data.board);
-      setCurrentPlayer(data.current_player);
-      setStatus(data.status);
-    } catch (error) {
-      console.error("Move failed:", error);
+      if (!response.ok) throw new Error(data.detail || "Invalid Move");
+      
+      setGameState(data);
+      if (isTutorial) setTutorialStep(prev => prev + 1);
+    } catch (error: any) {
+      showToast(error.message || "Quantum anomaly detected.", "error");
     } finally {
       setSelectedSquares([]);
       setLoading(false);
     }
   };
 
-  const resetGame = async () => {
+  const resetGame = async (mode: string = "PvE", mark: string = "X") => {
+    setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/reset`, { method: "POST" });
-      const data = await response.json();
-      setBoard(data.board);
-      setCurrentPlayer(data.current_player);
-      setStatus(data.status);
-      setSelectedSquares([]);
+      await fetch(`${API_URL}/reset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, player_mark: mark }),
+      });
+      await fetchState();
+      showToast(`Game reset: ${mode} mode`, "success");
     } catch (error) {
-      console.error("Reset failed:", error);
+      showToast("Reset failed.", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
+  const startTutorial = () => {
+    setIsTutorial(true);
+    setTutorialStep(0);
+    resetGame("PvP", "X");
+  };
+
+  if (!gameState) {
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] flex flex-col items-center justify-center p-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-[#00f2fe]" />
+        <p className="mt-4 text-[#00f2fe] font-mono animate-pulse">Initializing Quantum Engine...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4 font-sans">
-      <h1 className="text-5xl font-extrabold mb-8 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent drop-shadow-sm">
-        Quantum Tic-Tac-Toe
-      </h1>
-
-      <div className="bg-gray-800 p-8 rounded-3xl shadow-2xl border border-gray-700 backdrop-blur-sm">
-        <div className="grid grid-cols-3 gap-4">
-          {board.map((cell, idx) => {
-            const isSelected = selectedSquares.includes(idx);
-            const isFinished = status !== "ongoing";
-            const isCollapsed = cell === "X" || cell === "O";
-
-            return (
-              <button
-                key={idx}
-                id={`square-${idx}`}
-                onClick={() => handleSquareClick(idx)}
-                disabled={isFinished || isCollapsed}
-                className={`
-                  h-32 w-32 flex items-center justify-center p-2 rounded-2xl transition-all duration-300 transform
-                  ${isCollapsed ? "bg-gray-700 cursor-default" : "bg-gray-750 hover:bg-gray-600 active:scale-95 cursor-pointer"}
-                  ${isSelected ? "ring-4 ring-blue-500 bg-blue-900/40" : "border border-gray-700 shadow-inner"}
-                  ${isFinished && !isCollapsed ? "opacity-50" : ""}
-                `}
-              >
-                <div className="text-center break-words w-full">
-                  {isCollapsed ? (
-                    <span className={`text-6xl font-black ${cell === 'X' ? 'text-blue-400' : 'text-purple-400'}`}>
-                      {cell}
-                    </span>
-                  ) : (
-                    <span className="text-xs font-mono text-gray-400 tracking-tighter leading-tight">
-                      {cell}
-                    </span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+    <main className="min-h-screen bg-[#0a0a1a] text-white selection:bg-[#00f2fe]/30 font-sans overflow-hidden">
+      {/* Dynamic Background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full" />
       </div>
 
-      <div className="mt-8 flex flex-col items-center gap-4">
-        <div className={`text-2xl font-bold px-6 py-2 rounded-full border-2 ${
-          status.includes('wins') ? 'bg-green-900/30 border-green-500 text-green-400 animate-bounce' :
-          status.includes('Draw') ? 'bg-yellow-900/30 border-yellow-500 text-yellow-400' :
-          'bg-blue-900/20 border-blue-500/50 text-blue-300'
-        }`}>
-          {status === "ongoing" ? (
-            <span>Player <span className="text-blue-400 font-extrabold">{currentPlayer}</span>'s Turn</span>
-          ) : (
-            status.toUpperCase()
-          )}
-        </div>
+      <div className="relative z-10 max-w-4xl mx-auto px-6 py-12 flex flex-col items-center gap-12">
+        
+        {/* Header Section */}
+        <header className="text-center space-y-4">
+          <h1 className="text-5xl md:text-7xl font-black bg-clip-text text-transparent bg-gradient-to-r from-[#00f2fe] to-[#4facfe] tracking-tighter uppercase italic">
+            Quantum Tic-Tac-Toe
+          </h1>
+          <div className="flex justify-center gap-3">
+            <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase font-bold tracking-widest text-[#00f2fe]">
+              Mode: {gameState.mode === "PvE" ? "vs Computer" : "PvP"}
+            </span>
+            <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase font-bold tracking-widest text-[#4facfe]">
+              Locked As: {gameState.player_mark}
+            </span>
+          </div>
+        </header>
 
-        <button
-          onClick={resetGame}
-          className="px-6 py-2 bg-gray-750 hover:bg-gray-700 border border-gray-600 rounded-xl transition-colors text-sm font-semibold tracking-wide"
-        >
-          Reset Game
-        </button>
+        {/* The Grid Component */}
+        <QuantumGrid
+          board={gameState.board}
+          selectedSquares={selectedSquares}
+          tutorialHighlights={isTutorial ? TUTORIAL_STEPS[tutorialStep]?.highlightSquares || [] : []}
+          onSquareClick={handleSquareClick}
+          disabled={loading || gameState.status !== "ongoing"}
+        />
+
+        {/* Footer / Controls */}
+        <footer className="flex flex-col items-center gap-8 w-full">
+          <div className={`px-12 py-4 rounded-2xl border transition-all duration-500 ${
+            gameState.status === "ongoing" 
+              ? "bg-white/5 border-white/10 text-white/60" 
+              : "bg-[#00f2fe]/20 border-[#00f2fe]/50 text-[#00f2fe] scale-110 shadow-[0_0_30px_rgba(0,242,254,0.2)]"
+          }`}>
+            <span className="text-xl font-black uppercase tracking-widest italic">
+              {gameState.status === "ongoing" 
+                ? `${gameState.current_player === 'X' ? 'Player X' : 'Player O'}'s Turn` 
+                : gameState.status}
+            </span>
+          </div>
+
+          <div className="flex gap-4">
+            <button
+              onClick={() => resetGame(gameState.mode, gameState.player_mark)}
+              className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-bold uppercase tracking-widest text-xs"
+            >
+              Reset Match
+            </button>
+            <button
+              onClick={startTutorial}
+              className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-bold uppercase tracking-widest text-xs"
+            >
+              Simulation Mode
+            </button>
+            <button
+              onClick={() => resetGame(gameState.mode === "PvE" ? "PvP" : "PvE", gameState.player_mark)}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-white/10 hover:border-purple-500/50 transition-all font-bold uppercase tracking-widest text-xs"
+            >
+              Change Mode
+            </button>
+          </div>
+        </footer>
       </div>
 
-      <style jsx global>{`
-        .bg-gray-750 { background-color: #2d3748; }
-      `}</style>
-    </div>
+      {/* Overlays */}
+      {isTutorial && tutorialStep < TUTORIAL_STEPS.length && (
+        <TutorialOverlay
+          currentStep={tutorialStep}
+          totalSteps={TUTORIAL_STEPS.length}
+          stepData={TUTORIAL_STEPS[tutorialStep]}
+          onNext={() => {
+            if (tutorialStep === TUTORIAL_STEPS.length - 1) setIsTutorial(false);
+            else setTutorialStep(prev => prev + 1);
+          }}
+          onPrev={() => setTutorialStep(prev => Math.max(0, prev - 1))}
+          onEnd={() => setIsTutorial(false)}
+        />
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </main>
   );
 }
