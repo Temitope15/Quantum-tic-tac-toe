@@ -168,12 +168,12 @@ The project follows a modern, decoupled Monorepo architecture:
 
 ```mermaid
 graph TD
-    User((Player)) --> Frontend[Next.js Web App]
-    User --> CLI[Python CLI Tool]
-    Frontend -- REST API --> Backend[FastAPI Server]
-    CLI -- Internal Calls --> Engine[Game Manager]
-    Backend -- Internal Calls --> Engine
-    Engine --> Qiskit[IBM Qiskit Simulator]
+    User((Player)) --> Frontend[Next.js App]
+    User --> CLI[Python CLI]
+    Frontend -- REST API --> Backend[FastAPI]
+    CLI -- Internal --> Engine[Game Manager]
+    Backend -- Internal --> Engine
+    Engine --> Qiskit[Qiskit Simulator]
     Engine --> Graph[Entanglement Graph]
 ```
 
@@ -186,35 +186,35 @@ This diagram models the high-level thinking behind bringing the entire system to
 ```mermaid
 flowchart TB
     subgraph INSPIRATION["💡 Inspiration"]
-        A["Quantum Mechanics Concepts"] --> B["Can we FEEL superposition\nin a game?"]
-        B --> C["Map qubits to a 3×3 grid"]
+        A["Quantum Mechanics Concepts"] --> B["Can we feel superposition in a game?"]
+        B --> C["Map qubits to a 3x3 grid"]
     end
 
     subgraph CORE_ENGINE["⚙️ Core Engine Design"]
-        D["IBM Qiskit SDK"] --> E["QuantumGameBackend\n— Hadamard + CNOT gates\nper move"]
-        F["Graph Theory"] --> G["GraphState\n— Adjacency list tracking\nentanglement links"]
-        G --> H["DFS Cycle Detection\n— Stack-based search\nafter every move"]
-        H --> I["CollapseManager\n— QasmSimulator resolves\ncycles into classical state"]
+        D["IBM Qiskit SDK"] --> E["Quantum Backend - Gates per move"]
+        F["Graph Theory"] --> G["GraphState - Entanglement links"]
+        G --> H["DFS Cycle Detection - Loop detection"]
+        H --> I["Collapse Manager - Choice resolution"]
     end
 
     subgraph GAME_LOGIC["🎮 Game Logic Layer"]
-        J["GameManager\n— Orchestrates board,\nquantum engine, and graph"] --> K["Scoring\n— Evaluate collapsed marks\nfor three-in-a-row"]
-        J --> L["QuantumBot\n— Parasite Strategy AI\nusing graph centrality"]
+        J["Game Manager Orchestration"] --> K["Scoring - Evaluate winning lines"]
+        J --> L["QuantumBot - Parasite strategy AI"]
     end
 
     subgraph DELIVERY["🚀 Delivery"]
-        M["FastAPI REST Backend\n— Stateful game sessions"] --> N["Next.js + Framer Motion\nFrontend"]
-        N --> O["Player experiences\nquantum uncertainty\nfirsthand"]
+        M["FastAPI REST Backend"] --> N["Next.js + Framer Motion UI"]
+        N --> O["Player experience firsthand"]
     end
 
     INSPIRATION --> CORE_ENGINE
     CORE_ENGINE --> GAME_LOGIC
     GAME_LOGIC --> DELIVERY
 
-    style INSPIRATION fill:#1a1a2e,stroke:#6929C4,color:#e0e0e0
-    style CORE_ENGINE fill:#16213e,stroke:#0f3460,color:#e0e0e0
-    style GAME_LOGIC fill:#0f3460,stroke:#533483,color:#e0e0e0
-    style DELIVERY fill:#533483,stroke:#e94560,color:#e0e0e0
+    style INSPIRATION fill:#1a1a2e,stroke:#6929C4,color:#fff
+    style CORE_ENGINE fill:#16213e,stroke:#0f3460,color:#fff
+    style GAME_LOGIC fill:#0f3460,stroke:#533483,color:#fff
+    style DELIVERY fill:#533483,stroke:#e94560,color:#fff
 ```
 
 ## 🎮 How to Play (Strategy Guide)
@@ -343,8 +343,8 @@ To ensure a seamless deployment without "Quantum Anomalies" (connection conflict
 ### 1. Backend (Render)
 - **Service Type**: Web Service
 - **Root Directory**: `backend`
-- **Build Command**: `pip install -r requirements.txt`
-- **Start Command**: `python api.py` (The script automatically detects the Render `$PORT`)
+- **Build Command**: `pip install --upgrade pip && pip install -r requirements.txt`
+- **Start Command**: `bash run.sh` (The script automatically detects the Render `$PORT`)
 - **Environment Variables**:
   - `PYTHON_VERSION`: `3.10` or higher
 

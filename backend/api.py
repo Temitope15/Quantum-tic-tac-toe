@@ -98,4 +98,6 @@ async def make_move(request: MoveRequest):
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("api:app", host="0.0.0.0", port=port, reload=True)
+    # Only reload if DEBUG is explicitly set to "True"
+    is_debug = os.environ.get("DEBUG", "False").lower() == "true"
+    uvicorn.run("api:app", host="0.0.0.0", port=port, reload=is_debug)
