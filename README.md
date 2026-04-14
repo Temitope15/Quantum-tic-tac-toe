@@ -346,7 +346,10 @@ To ensure a seamless deployment without "Quantum Anomalies" (connection conflict
 - **Build Command**: `pip install --upgrade pip && pip install -r requirements.txt`
 - **Start Command**: `bash run.sh` (The script automatically detects the Render `$PORT`)
 - **Environment Variables**:
-  - `PYTHON_VERSION`: `3.10` or higher
+  - `PYTHON_VERSION`: `3.11.9`
+
+> [!CAUTION]
+> **Build Failure Warning**: Do not leave the `PYTHON_VERSION` empty or set it to anything higher than 3.12. Render may default to Python 3.14, which does not yet support the binary wheels for `scipy` and `qiskit`, causing the build to fail.
 
 ### 2. Frontend (Vercel)
 - **Framework Preset**: Next.js
