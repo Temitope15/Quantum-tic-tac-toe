@@ -145,17 +145,42 @@ export default function QuantumTicTacToe() {
       <div className="relative z-10 max-w-4xl mx-auto px-6 py-12 flex flex-col items-center gap-12">
         
         {/* Header Section */}
-        <header className="text-center space-y-4">
-          <h1 className="text-5xl md:text-7xl font-black bg-clip-text text-transparent bg-gradient-to-r from-[#00f2fe] to-[#4facfe] tracking-tighter uppercase italic">
+        <header className="text-center space-y-6">
+          <h1 className="text-5xl md:text-7xl font-black bg-clip-text text-transparent bg-gradient-to-r from-[#00f2fe] to-[#4facfe] tracking-tight uppercase italic pr-2">
             Quantum Tic-Tac-Toe
           </h1>
-          <div className="flex justify-center gap-3">
-            <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase font-bold tracking-widest text-[#00f2fe]">
-              Mode: {gameState.mode === "PvE" ? "vs Computer" : "PvP"}
-            </span>
-            <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase font-bold tracking-widest text-[#4facfe]">
-              Locked As: {gameState.player_mark}
-            </span>
+          
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex justify-center gap-3">
+              <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase font-bold tracking-widest text-[#00f2fe]">
+                Mode: {gameState.mode === "PvE" ? "vs Computer" : "PvP"}
+              </span>
+              <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase font-bold tracking-widest text-[#4facfe]">
+                Playing As: {gameState.player_mark}
+              </span>
+            </div>
+
+            {/* Mark Selector (Only visible in PvE mode) */}
+            {gameState.mode === "PvE" && gameState.status === "ongoing" && gameState.board.every(cell => Array.isArray(cell) && cell.length === 0) && (
+              <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/10">
+                <button
+                  onClick={() => resetGame("PvE", "X")}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    gameState.player_mark === "X" ? "bg-[#00f2fe] text-black shadow-[0_0_15px_rgba(0,242,254,0.3)]" : "text-white/40 hover:text-white"
+                  }`}
+                >
+                  Play as X
+                </button>
+                <button
+                  onClick={() => resetGame("PvE", "O")}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    gameState.player_mark === "O" ? "bg-[#00f2fe] text-black shadow-[0_0_15px_rgba(0,242,254,0.3)]" : "text-white/40 hover:text-white"
+                  }`}
+                >
+                  Play as O
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
@@ -177,7 +202,7 @@ export default function QuantumTicTacToe() {
           }`}>
             <span className="text-xl font-black uppercase tracking-widest italic">
               {gameState.status === "ongoing" 
-                ? `${gameState.current_player === 'X' ? 'Player X' : 'Player O'}'s Turn` 
+                ? (gameState.current_player === gameState.player_mark ? "Your Turn" : "AI Thinking...") 
                 : gameState.status}
             </span>
           </div>
