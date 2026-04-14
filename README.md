@@ -303,8 +303,10 @@ Now you can start the backend anytime using the shortcut script:
 ```
 
 ### 2. Setup the Frontend
+Configure your environment variables first:
 ```bash
 cd frontend
+cp .env.example .env.local
 npm install
 npm run dev
 ```
@@ -318,6 +320,43 @@ Visit [http://localhost:3000](http://localhost:3000) to start your first quantum
 - **Backend**: FastAPI, Pydantic, Python.
 - **Quantum Engine**: IBM Qiskit (Aer Simulator) for move resolution.
 - **Graph Logic**: Custom Cycle-Detection Algorithm via adjacency maps.
+
+---
+
+## 🔑 Environment Configuration
+
+To keep the codebase secure and flexible, all external links and API configurations are managed via environment variables.
+
+### Frontend (`frontend/`)
+Create a `.env.local` file (or copy from `.env.example`):
+- `NEXT_PUBLIC_API_URL`: The full URL of your backend (default for local: `http://127.0.0.1:8000`).
+
+### Backend (`backend/`)
+- `PORT`: (Optional) The port used by the FastAPI server (default: `8000`). This is automatically handled by Render during deployment.
+
+---
+
+## 🌐 Deployment Checklist
+
+To ensure a seamless deployment without "Quantum Anomalies" (connection conflicts), follow these settings:
+
+### 1. Backend (Render)
+- **Service Type**: Web Service
+- **Root Directory**: `backend`
+- **Build Command**: `pip install -r requirements.txt`
+- **Start Command**: `python api.py` (The script automatically detects the Render `$PORT`)
+- **Environment Variables**:
+  - `PYTHON_VERSION`: `3.10` or higher
+
+### 2. Frontend (Vercel)
+- **Framework Preset**: Next.js
+- **Root Directory**: `frontend`
+- **Environment Variables**:
+  - `NEXT_PUBLIC_API_URL`: Set this to your **Render Service URL** (e.g., `https://quantum-backend.onrender.com`).
+  - *Note: Do not include a trailing slash.*
+
+> [!IMPORTANT]
+> **CORS Handling**: The backend is configured to allow all origins (`*`) by default to ensure Vercel can communicate with Render. For a production environment, it is recommended to restrict `allow_origins` in `backend/api.py` to your specific Vercel URL.
 
 ---
 

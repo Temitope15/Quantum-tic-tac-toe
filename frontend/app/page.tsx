@@ -5,7 +5,11 @@ import { QuantumGrid } from "../components/QuantumGrid";
 import { TutorialOverlay } from "../components/TutorialOverlay";
 import { Toast } from "../components/Toast";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+  console.warn("⚠️ Quantum Warning: NEXT_PUBLIC_API_URL is not defined. Check your .env files!");
+}
 
 interface GameState {
   board: (string | string[])[];
