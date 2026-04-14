@@ -4,7 +4,10 @@ A high-stakes, physics-inspired strategic board game built with **FastAPI**, **N
 
 
 ### 🎥 Live Simulation
-<video src="frontend/public/simulation.webm" width="100%" controls autoplay loop muted></video>
+
+<video src="./frontend/public/simulation.webm" width="100%" controls autoplay loop muted>
+  Your browser does not support the video tag. You can view the simulation file at frontend/public/simulation.webm
+</video>
 
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
@@ -168,11 +171,11 @@ The project follows a modern, decoupled Monorepo architecture:
 
 ```mermaid
 graph TD
-    User((Player)) --> Frontend[Next.js App]
+    User[Player] --> Frontend[Next.js App]
     User --> CLI[Python CLI]
-    Frontend -- REST API --> Backend[FastAPI]
-    CLI -- Internal --> Engine[Game Manager]
-    Backend -- Internal --> Engine
+    Frontend --> Backend[FastAPI]
+    CLI --> Engine[Game Manager]
+    Backend --> Engine
     Engine --> Qiskit[Qiskit Simulator]
     Engine --> Graph[Entanglement Graph]
 ```
@@ -185,36 +188,30 @@ This diagram models the high-level thinking behind bringing the entire system to
 
 ```mermaid
 flowchart TB
-    subgraph INSPIRATION["💡 Inspiration"]
-        A["Quantum Mechanics Concepts"] --> B["Can we feel superposition in a game?"]
-        B --> C["Map qubits to a 3x3 grid"]
+    subgraph Inspiration
+        A[Quantum Concepts] --> B[Map qubits to grid]
     end
 
-    subgraph CORE_ENGINE["⚙️ Core Engine Design"]
-        D["IBM Qiskit SDK"] --> E["Quantum Backend - Gates per move"]
-        F["Graph Theory"] --> G["GraphState - Entanglement links"]
-        G --> H["DFS Cycle Detection - Loop detection"]
-        H --> I["Collapse Manager - Choice resolution"]
+    subgraph Core_Engine
+        D[IBM Qiskit SDK] --> E[Backend Gates]
+        F[Graph Theory] --> G[Entanglement Links]
+        G --> H[Cycle Detection]
+        H --> I[State Collapse]
     end
 
-    subgraph GAME_LOGIC["🎮 Game Logic Layer"]
-        J["Game Manager Orchestration"] --> K["Scoring - Evaluate winning lines"]
-        J --> L["QuantumBot - Parasite strategy AI"]
+    subgraph Logic
+        J[Game Management] --> K[Scoring]
+        J --> L[AI Bot]
     end
 
-    subgraph DELIVERY["🚀 Delivery"]
-        M["FastAPI REST Backend"] --> N["Next.js + Framer Motion UI"]
-        N --> O["Player experience firsthand"]
+    subgraph App
+        M[FastAPI] --> N[Next.js UI]
+        N --> O[User Interface]
     end
 
-    INSPIRATION --> CORE_ENGINE
-    CORE_ENGINE --> GAME_LOGIC
-    GAME_LOGIC --> DELIVERY
-
-    style INSPIRATION fill:#1a1a2e,stroke:#6929C4,color:#fff
-    style CORE_ENGINE fill:#16213e,stroke:#0f3460,color:#fff
-    style GAME_LOGIC fill:#0f3460,stroke:#533483,color:#fff
-    style DELIVERY fill:#533483,stroke:#e94560,color:#fff
+    Inspiration --> Core_Engine
+    Core_Engine --> Logic
+    Logic --> App
 ```
 
 ## 🎮 How to Play (Strategy Guide)
@@ -346,10 +343,16 @@ To ensure a seamless deployment without "Quantum Anomalies" (connection conflict
 - **Build Command**: `pip install --upgrade pip && pip install -r requirements.txt`
 - **Start Command**: `bash run.sh` (The script automatically detects the Render `$PORT`)
 - **Environment Variables**:
-  - `PYTHON_VERSION`: `3.11.9`
+  - `PYTHON_VERSION`: `3.11.9` (Required)
+  - `PORT`: (Managed by Render)
 
 > [!CAUTION]
-> **Build Failure Warning**: Do not leave the `PYTHON_VERSION` empty or set it to anything higher than 3.12. Render may default to Python 3.14, which does not yet support the binary wheels for `scipy` and `qiskit`, causing the build to fail.
+> **The Absolute Guarantee (Fix for Scipy Build Errors)**: 
+> 1. In your Render Dashboard, go to **Settings** > **Environment**.
+> 2. Add an environment variable with Key: `PYTHON_VERSION` and Value: `3.11.9`.
+> 3. Click **Manual Deploy** > **Clear Cache and Deploy**.
+>
+> This is required because Render defaults to Python 3.14, which does not yet have pre-built stable versions for `scipy` and `qiskit`. Using 3.11 avoids 50+ line Fortran compiler errors.
 
 ### 2. Frontend (Vercel)
 - **Framework Preset**: Next.js
